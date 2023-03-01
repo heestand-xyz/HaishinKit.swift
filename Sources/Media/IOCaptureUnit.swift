@@ -186,6 +186,29 @@ public class IOVideoCaptureUnit: IOCaptureUnit {
             logger.error("while setting torch:", error)
         }
     }
+    
+    func tapToFocus(at unitPoint: CGPoint) {
+        guard let device else {
+            return
+        }
+        do {
+            try device.lockForConfiguration()
+            if device.isFocusPointOfInterestSupported,
+               device.isFocusModeSupported(.autoFocus) {
+                device.focusPointOfInterest = unitPoint
+                device.focusMode = .autoFocus
+                
+            }
+            if device.isExposurePointOfInterestSupported,
+               device.isExposureModeSupported(.autoExpose) {
+                device.exposurePointOfInterest = unitPoint
+                device.exposureMode = .autoExpose
+            }
+            device.unlockForConfiguration()
+        } catch {
+            logger.error("while setting torch:", error)
+        }
+    }
 
     func setSampleBufferDelegate(_ videoUnit: IOVideoUnit?) {
         if let videoUnit {

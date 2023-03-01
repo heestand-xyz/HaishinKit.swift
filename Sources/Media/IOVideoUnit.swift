@@ -202,6 +202,10 @@ final class IOVideoUnit: NSObject, IOUnit {
         capture.setTorchMode(torchMode)
         multiCamCapture.setTorchMode(torchMode)
     }
+    
+    func tapToFocus(at unitPoint: CGPoint) {
+        capture.tapToFocus(at: unitPoint)
+    }
     #endif
 
     @inline(__always)

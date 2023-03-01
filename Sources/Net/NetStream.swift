@@ -46,6 +46,12 @@ open class NetStream: NSObject {
             }
         }
     }
+    
+    public func tapToFocus(at unitPoint: CGPoint) {
+        lockQueue.sync {
+            self.mixer.videoIO.tapToFocus(at: unitPoint)
+        }
+    }
 
     /// Specifies the frame rate of a device capture.
     public var frameRate: Float64 {
