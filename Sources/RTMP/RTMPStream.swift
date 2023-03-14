@@ -22,6 +22,8 @@ public protocol RTMPStreamDelegate: AnyObject {
     func rtmpStream(_ stream: RTMPStream, videoCodecErrorOccurred error: VideoCodec.Error)
     /// Tells the receiver to the stream opend.
     func rtmpStreamDidClear(_ stream: RTMPStream)
+    @available(iOS 13.0.0, *)
+    func rtmpStreamEdit(_ stream: RTMPStream, sampleBuffer: CMSampleBuffer) async throws  -> CMSampleBuffer?
 }
 
 /// An object that provides the interface to control a one-way channel over a RtmpConnection.
@@ -282,6 +284,13 @@ open class RTMPStream: NetStream {
         rtmpConnection?.addEventListener(.rtmpStatus, selector: #selector(on(status:)), observer: self)
         if rtmpConnection?.connected == true {
             rtmpConnection?.createStream(self)
+        }
+        mixer.videoIO.editSampleBuffer = { [weak self] sampleBuffer in
+            guard let self else { return nil }
+            if #available(iOS 13.0.0, *) {
+                return try await self.delegate?.rtmpStreamEdit(self, sampleBuffer: sampleBuffer)
+            }
+            return nil
         }
     }
 

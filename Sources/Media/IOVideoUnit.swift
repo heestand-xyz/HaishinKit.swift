@@ -12,6 +12,8 @@ final class IOVideoUnit: NSObject, IOUnit {
     ]
 
     let lockQueue = DispatchQueue(label: "com.haishinkit.HaishinKit.VideoIOComponent.lock")
+    
+    var editSampleBuffer: ((CMSampleBuffer) async throws -> CMSampleBuffer?)?
 
     var context: CIContext = .init() {
         didSet {
@@ -319,10 +321,29 @@ extension IOVideoUnit: AVCaptureVideoDataOutputSampleBufferDelegate {
     // MARK: AVCaptureVideoDataOutputSampleBufferDelegate
     func captureOutput(_ captureOutput: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         if capture.output == captureOutput {
-            guard mixer?.useSampleBuffer(sampleBuffer: sampleBuffer, mediaType: AVMediaType.video) == true else {
-                return
+            @Sendable
+            func use(sampleBuffer: CMSampleBuffer) {
+                guard mixer?.useSampleBuffer(sampleBuffer: sampleBuffer, mediaType: AVMediaType.video) == true else {
+                    return
+                }
+                appendSampleBuffer(sampleBuffer)
             }
-            appendSampleBuffer(sampleBuffer)
+            if #available(iOS 13.0, *) {
+                Task {
+                    do {
+                        if let sampleBuffer: CMSampleBuffer = try await editSampleBuffer?(sampleBuffer) {
+                            use(sampleBuffer: sampleBuffer)
+                        } else {
+                            use(sampleBuffer: sampleBuffer)
+                        }
+                    } catch {
+                        print("HaishinKit Video Edit Failed", error)
+                        use(sampleBuffer: sampleBuffer)
+                    }
+                }
+            } else {
+                use(sampleBuffer: sampleBuffer)
+            }
         } else if multiCamCapture.output == captureOutput {
             multiCamSampleBuffer = sampleBuffer
         }
